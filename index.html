@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1016">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+<title>Σκούπα Κινητού</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Commissioner:wght@500;700;800&family=Noto+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one-column phone tool — summary header, category grid, then the single "all files" window with a sticky delete bar. Dark-first. */
+:root{
+  --bg:#0b1016; --surface:#131a23; --surface-2:#1a2330; --line:#243041;
+  --fg:#e8eef5; --muted:#8b9bb0; --accent:#3ddc97; --accent-ink:#04261a;
+  --danger:#ff5d5d; --danger-ink:#2b0606; --warn:#ffb547;
+  --c-video:#7aa7ff; --c-image:#ff8fb3; --c-audio:#c59bff; --c-junk:#ffb547; --c-apk:#3ddc97; --c-doc:#6fd3e8; --c-other:#8b9bb0;
+  --display:"Commissioner","Noto Sans",system-ui,sans-serif;
+  --body:"Noto Sans",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#f3f6f9; --surface:#ffffff; --surface-2:#eaf0f5; --line:#d6dee8;
+  --fg:#0f1722; --muted:#5a6878; --accent:#11a868; --accent-ink:#ffffff;
+  --danger:#d93636; --danger-ink:#ffffff; --warn:#b86e00; color-scheme:light } }
+:root[data-theme="light"]{
+  --bg:#f3f6f9; --surface:#ffffff; --surface-2:#eaf0f5; --line:#d6dee8;
+  --fg:#0f1722; --muted:#5a6878; --accent:#11a868; --accent-ink:#ffffff;
+  --danger:#d93636; --danger-ink:#ffffff; --warn:#b86e00; color-scheme:light }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 120px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:34px;height:34px}
+.brand h1{font-family:var(--display);font-weight:800;font-size:22px;margin:0;letter-spacing:-.01em}
+.mode{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.mode.live{color:var(--accent);border-color:var(--accent)}
+
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.hero .lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hero .big{font-family:var(--display);font-weight:800;font-size:clamp(40px,12vw,58px);line-height:1;letter-spacing:-.02em}
+.hero .big small{font-size:.42em;font-weight:700;color:var(--muted);margin-left:6px}
+.hero .sub{color:var(--muted);font-size:14px}
+.stack{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--surface-2)}
+.stack span{height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:1px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:14px;padding:14px 12px;font-weight:600;font-size:15px;background:var(--surface-2);border:1px solid var(--line)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.danger{background:var(--danger);color:var(--danger-ink);border-color:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.progress{height:4px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.progress b{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+
+h2{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sec-head .muted{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cat{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;position:relative;min-width:0}
+.cat:hover{border-color:var(--muted)}
+.cat .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center}
+.cat .ic svg{width:18px;height:18px}
+.cat .name{font-weight:600;font-size:14px}
+.cat .meta{display:flex;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted)}
+.cat .meta .num{color:var(--fg)}
+.cat.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+
+.tools{display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:13px;white-space:nowrap}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.row-tools{display:flex;gap:8px;flex-wrap:wrap}
+.row-tools input,.row-tools select{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);font:inherit;font-size:14px;min-width:0}
+.row-tools input{flex:1 1 160px}
+.row-tools select{flex:0 1 auto}
+
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.listhead{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.item{display:grid;grid-template-columns:24px 36px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.item:last-child{border-bottom:0}
+.item:hover{background:var(--surface-2)}
+.item.sel{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.cb{width:22px;height:22px;border-radius:7px;border:2px solid var(--muted);display:grid;place-items:center}
+.sel .cb,.cb.on{background:var(--accent);border-color:var(--accent)}
+.cb svg{width:14px;height:14px;opacity:0}
+.sel .cb svg,.cb.on svg{opacity:1}
+.ficon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2)}
+.ficon svg{width:18px;height:18px}
+.fname{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fpath{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tags{display:flex;gap:4px;margin-top:2px;flex-wrap:wrap}
+.tag{font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:5px;background:var(--surface-2);color:var(--muted)}
+.tag.warn{color:var(--warn)}
+.fsize{text-align:right;font-size:13px}
+.fsize small{display:block;color:var(--muted);font-size:11px}
+.more{padding:12px;text-align:center;border-top:1px solid var(--line)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar .info{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+.bar .info b{display:block;color:var(--fg);font-size:16px;font-family:var(--display)}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:640px;padding:20px max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.sheet h3{font-family:var(--display);font-size:20px;margin:0}
+.sheet p{margin:0;color:var(--muted)}
+.warnbox{border:1px solid var(--warn);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;max-width:calc(100% - 32px)}
+.zones .cat .meta{font-size:12px}
+.cat .meta .num{white-space:nowrap}
+.cat.busy{border-color:var(--accent);opacity:.8}
+.safe{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;font-size:13px;color:var(--muted);background:color-mix(in srgb,var(--accent) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:14px;padding:12px 14px}
+.safe svg{width:26px;height:26px}
+.safe b{color:var(--fg)}
+.app{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.app:last-child{border-bottom:0}
+.app .av{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:15px;color:#fff}
+.app .meter{height:4px;border-radius:4px;background:var(--surface-2);margin-top:5px;overflow:hidden}
+.app .meter b{display:block;height:100%;background:var(--warn)}
+.app .sm{padding:7px 10px;font-size:13px;border-radius:10px}
+.app .sz{font-size:12px;color:var(--muted);margin-top:3px}
+.note{font-size:13px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:12px 14px}
+.note b{color:var(--fg)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="10" fill="var(--accent)"/><path d="M11 22c2-6 6-10 13-12l-3 6 4 1c-4 3-8 5-14 5z" fill="var(--accent-ink)"/></svg>
+      <h1>Σκούπα</h1>
+    </div>
+    <span class="mode" id="mode">Επίδειξη</span>
+  </header>
+
+  <section class="hero" aria-live="polite">
+    <div class="lbl">Μπορείς να ελευθερώσεις</div>
+    <div class="big num" id="bigFree">0<small>MB</small></div>
+    <div class="sub" id="heroSub">Σαρώνονται σκουπίδια, κρυφά αρχεία cache, διπλότυπα και μεγάλα αρχεία.</div>
+    <div class="stack" id="stack"></div>
+    <div class="legend" id="legend"></div>
+    <div class="progress" id="prog" hidden><b></b></div>
+    <div class="actions">
+      <button class="btn primary" id="smartBtn">Έξυπνος καθαρισμός</button>
+      <button class="btn" id="scanBtn">Νέα σάρωση</button>
+    </div>
+  </section>
+
+  <section class="tools" aria-label="Τμήματα κινητού">
+    <div class="sec-head"><h2>Τμήματα κινητού</h2><span class="muted" id="scopeNow"></span></div>
+    <div class="grid zones" id="zones"></div>
+  </section>
+
+  <section class="tools" id="appCache" aria-label="Cache εφαρμογών">
+    <div class="sec-head"><h2>Cache εφαρμογών</h2><span class="muted num" id="cacheTotal"></span></div>
+    <div class="safe">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+      <div><b>Οι κωδικοί και οι εφαρμογές δεν χάνονται.</b> Η cache είναι προσωρινά αρχεία, π.χ. εικόνες που έχουν φορτώσει το Facebook ή το TikTok. Όταν σβήνεται, η εφαρμογή απλώς τα ξανακατεβάζει. Συνδέσεις, κωδικοί, συνομιλίες και ρυθμίσεις μένουν, γιατί βρίσκονται στα «Δεδομένα», που η Σκούπα δεν τα αγγίζει ποτέ.</div>
+    </div>
+    <div class="list" id="apps"></div>
+    <button class="btn primary" id="cacheBtn">Καθάρισμα cache όλων των εφαρμογών</button>
+  </section>
+
+  <section class="tools" aria-label="Κατηγορίες">
+    <div class="sec-head"><h2>Κατηγορίες</h2><span class="muted num" id="totalFiles"></span></div>
+    <div class="grid" id="cats"></div>
+  </section>
+
+  <section class="tools" id="allFiles" aria-label="Όλα τα αρχεία">
+    <div class="sec-head"><h2 id="listTitle">Όλα τα αρχεία</h2><span class="muted" id="listCount"></span></div>
+    <div class="chips" id="chips"></div>
+    <div class="row-tools">
+      <input id="q" type="search" placeholder="Αναζήτηση ονόματος ή φακέλου" autocomplete="off">
+      <select id="sort" aria-label="Ταξινόμηση">
+        <option value="size">Μεγαλύτερα πρώτα</option>
+        <option value="old">Παλαιότερα πρώτα</option>
+        <option value="new">Νεότερα πρώτα</option>
+        <option value="name">Όνομα Α-Ω</option>
+      </select>
+      <select id="minSize" aria-label="Ελάχιστο μέγεθος">
+        <option value="0">Κάθε μέγεθος</option>
+        <option value="10">Πάνω από 10 MB</option>
+        <option value="50">Πάνω από 50 MB</option>
+        <option value="100">Πάνω από 100 MB</option>
+        <option value="500">Πάνω από 500 MB</option>
+      </select>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <div class="note" id="envNote"></div>
+</div>
+
+<div class="bar" id="bar">
+  <div class="in">
+    <button class="cb" id="selAll" aria-label="Επιλογή όλων όσων φαίνονται"><svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" stroke="var(--accent-ink)" stroke-width="2.4" fill="none"/></svg></button>
+    <div class="info"><b class="num" id="selSize">0 MB</b><span id="selCount">Δεν έχεις επιλέξει αρχεία</span></div>
+    <button class="btn danger" id="delBtn" disabled>Διαγραφή</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">Διαγραφή αρχείων;</h3>
+    <p id="sheetText"></p>
+    <div class="warnbox" id="sheetWarn" hidden></div>
+    <div class="actions">
+      <button class="btn" id="cancelDel">Άκυρο</button>
+      <button class="btn danger" id="confirmDel">Διαγραφή</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="folderPick" webkitdirectory multiple hidden>
+
+<script>
+/* ===================== Κατηγορίες & κανόνες ===================== */
+const EXT = {
+  video:["mp4","mkv","mov","avi","3gp","webm","m4v"],
+  image:["jpg","jpeg","png","gif","webp","heic","heif","bmp","dng"],
+  audio:["mp3","m4a","aac","wav","ogg","opus","flac","amr"],
+  doc:["pdf","doc","docx","xls","xlsx","ppt","pptx","txt","odt","csv"],
+  apk:["apk","xapk","apks"],
+  archive:["zip","rar","7z","tar","gz"]
+};
+const JUNK_EXT = ["tmp","temp","log","bak","old","part","crdownload","download","chck","dmp"];
+const JUNK_DIR = /(^|\/)(\.thumbnails|\.cache|cache|\.tmp|temp|\.trash[^/]*|lost\.dir|\.statuses_old)(\/|$)/i;
+/* Ποτέ δεν αγγίζουμε αυτά: φάκελοι συστήματος/εφαρμογών */
+const PROTECTED = /^(android\/(data|obb)|\.android_secure)(\/|$)/i;
+
+/* Βιβλιοθήκη κανόνων: γνωστοί φάκελοι εφαρμογών.
+   junk  = ασφαλές να φύγει (η εφαρμογή το ξαναφτιάχνει)
+   keep  = ΠΟΤΕ στον αυτόματο καθαρισμό (αντίγραφα συνομιλιών, κλειδιά, κωδικοί) */
+const RULES = [
+  {app:"WhatsApp", re:/whatsapp\/(media\/)?\.statuses\//i,                kind:"junk", why:"Status που έχεις ήδη δει"},
+  {app:"WhatsApp", re:/whatsapp\/(databases|backups)\//i,                 kind:"keep", why:"Αντίγραφο συνομιλιών"},
+  {app:"WhatsApp", re:/whatsapp\/\.shared\//i,                            kind:"junk", why:"Προσωρινά κοινοποίησης"},
+  {app:"Viber",    re:/viber\/(media\/)?\.(thumbnails|temp)/i,            kind:"junk", why:"Προεπισκοπήσεις"},
+  {app:"Viber",    re:/viber\/.*backup/i,                                 kind:"keep", why:"Αντίγραφο συνομιλιών"},
+  {app:"Telegram", re:/telegram\/(telegram cache|\.cache)\//i,            kind:"junk", why:"Cache Telegram"},
+  {app:"Facebook", re:/com\.facebook\.(katana|orca|lite)\/.*cache/i,      kind:"junk", why:"Cache Facebook / Messenger"},
+  {app:"Instagram",re:/com\.instagram\.android\/.*cache/i,                kind:"junk", why:"Cache Instagram"},
+  {app:"TikTok",   re:/com\.(zhiliaoapp\.musically|ss\.android\.ugc)\/.*(cache|tmp)/i, kind:"junk", why:"Cache TikTok"},
+  {app:"CapCut",   re:/com\.lemon\.lvoverseas\/.*(cache|tmp|\.thumb)/i,   kind:"junk", why:"Cache CapCut (όχι τα projects)"},
+  {app:"Chrome",   re:/com\.android\.chrome\/.*cache/i,                   kind:"junk", why:"Cache Chrome"},
+  {app:"Σύστημα",  re:/(^|\/)(lost\.dir|\.trash[^/]*|bugreports|miui\/debug_log|tencent\/msflogs)(\/|$)/i, kind:"junk", why:"Υπολείμματα και logs"},
+  {app:"Σύστημα",  re:/(^|\/)\.thumbnails\//i,                            kind:"junk", why:"Μικρογραφίες γκαλερί, ξαναφτιάχνονται"},
+  {app:"Κλειδιά",  re:/\.(key|keystore|jks|kdbx|p12|pem|crypt\d*)$/i,      kind:"keep", why:"Κλειδιά ή κωδικοί"},
+];
+
+/* Τμήματα κινητού: πατάς ένα, σαρώνεται μόνο αυτό */
+const ZONES = [
+  {id:"all",      name:"Όλο το κινητό",          roots:[""]},
+  {id:"camera",   name:"Κάμερα & εικόνες",       roots:["DCIM","Pictures"]},
+  {id:"whatsapp", name:"WhatsApp",               roots:["Android/media/com.whatsapp","WhatsApp"]},
+  {id:"chat",     name:"Viber · Telegram · FB",   roots:["Viber","Android/media/com.viber.voip","Telegram","Android/media/org.telegram.messenger","Android/media/com.facebook.katana","Android/media/com.facebook.orca","Android/media/com.instagram.android","Android/media/com.zhiliaoapp.musically"]},
+  {id:"download", name:"Λήψεις",                 roots:["Download"]},
+  {id:"movies",   name:"Ταινίες & μοντάζ",       roots:["Movies","Android/media/com.lemon.lvoverseas"]},
+  {id:"music",    name:"Μουσική & ηχογραφήσεις", roots:["Music","Recordings","Podcasts","Audiobooks"]},
+  {id:"hidden",   name:"Κρυφά & υπολείμματα",    roots:[""], only:f=>f.hidden||f.junk},
+];
+let zone="all"; const zoneSize={};
+
+const CATS = [
+  {id:"junk",  name:"Σκουπίδια",      color:"var(--c-junk)",  d:"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"},
+  {id:"large", name:"Μεγάλα αρχεία",  color:"var(--danger)",  d:"M4 20h16M7 16V9M12 16V4M17 16v-5"},
+  {id:"video", name:"Βίντεο",         color:"var(--c-video)", d:"M3 6h13v12H3zM16 10l5-3v10l-5-3"},
+  {id:"image", name:"Φωτογραφίες",    color:"var(--c-image)", d:"M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M15 9h.01"},
+  {id:"audio", name:"Ήχος",           color:"var(--c-audio)", d:"M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"},
+  {id:"hidden",name:"Κρυφά",          color:"var(--muted)",   d:"M3 3l18 18M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-3 3.6M6.6 6.6A17 17 0 0 0 3 12s4 6 9 6a9 9 0 0 0 4-.9"},
+  {id:"dup",   name:"Διπλότυπα",      color:"var(--c-doc)",   d:"M8 8h12v12H8zM4 16V4h12"},
+  {id:"apk",   name:"Αρχεία APK",     color:"var(--c-apk)",   d:"M6 9h12v9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2zM8 9V7a4 4 0 0 1 8 0v2M9 4 7.5 2.5M15 4l1.5-1.5"},
+  {id:"doc",   name:"Έγγραφα",        color:"var(--c-doc)",   d:"M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6"},
+];
+const TYPE_ICON = {video:"video",image:"image",audio:"audio",doc:"doc",apk:"apk",archive:"doc",other:"doc",junk:"junk"};
+
+/* ===================== Βοηθητικά ===================== */
+const $ = s => document.querySelector(s);
+const MB = 1024*1024;
+function fmt(b){ if(b>=1024**3) return (b/1024**3).toFixed(2).replace(".",",")+" GB";
+  if(b>=MB) return (b/MB).toFixed(b>=100*MB?0:1).replace(".",",")+" MB";
+  if(b>=1024) return Math.round(b/1024)+" KB"; return b+" B"; }
+function fmtParts(b){ const s=fmt(b).split(" "); return [s[0],s[1]]; }
+function date(ms){ return new Date(ms).toLocaleDateString("el-GR",{day:"numeric",month:"short",year:"numeric"}); }
+function esc(s){ return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function svgIcon(id,color){ const c=CATS.find(x=>x.id===id)||CATS[8];
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="${color||c.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${c.d}"/></svg>`; }
+let toastT; function toast(m){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+
+function classify(f){
+  const name=f.name.toLowerCase(), ext=name.includes(".")?name.split(".").pop():"";
+  let type="other";
+  for(const k in EXT) if(EXT[k].includes(ext)) type=k;
+  const segs=f.path.split("/");
+  f.type=type;
+  f.hidden=segs.some(s=>s.startsWith(".") && s.length>1);
+  f.junk = JUNK_EXT.includes(ext) || JUNK_DIR.test(f.path) || f.size===0;
+  f.protected = PROTECTED.test(f.path);
+  const r = RULES.find(x=>x.re.test(f.path));
+  if(r){ f.app=r.app; f.why=r.why;
+    if(r.kind==="junk") f.junk=true;
+    if(r.kind==="keep"){ f.junk=false; f.keep=true; } }
+  return f;
+}
+function markDuplicates(files){
+  const m=new Map();
+  for(const f of files){ f.dup=false; if(f.size<50*1024) continue;
+    const base=f.name.toLowerCase().replace(/[\s_-]*\(\d+\)(?=\.)/,"").replace(/[\s_-]*copy(?=\.)/,"");
+    const k=f.size+"|"+base; (m.get(k)||m.set(k,[]).get(k)).push(f); }
+  for(const g of m.values()) if(g.length>1){ g.sort((a,b)=>a.mtime-b.mtime); g.slice(1).forEach(f=>f.dup=true); }
+}
+
+/* ===================== Πηγές αρχείων (adapters) ===================== */
+/* 1) APK: Capacitor Filesystem με άδεια «Πρόσβαση σε όλα τα αρχεία» */
+const ROOT="file:///storage/emulated/0";
+const NativeAdapter = {
+  id:"native", label:"Κινητό", canDelete:true,
+  available(){ return !!(window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.Filesystem); },
+  async ensurePermission(){ const n=window.SkoupaNative; if(n?.hasAllFilesAccess && !(await n.hasAllFilesAccess())) await n.requestAllFilesAccess(); },
+  async scan(onProgress, roots=[""]){
+    const FS=window.Capacitor.Plugins.Filesystem, out=[], queue=[...roots]; let dirs=0;
+    while(queue.length){
+      const rel=queue.shift(); if(PROTECTED.test(rel)) continue;
+      let res; try{ res=await FS.readdir({path:ROOT+(rel?"/"+rel:"")}); }catch(e){ continue; }
+      dirs++; if(dirs%20===0) onProgress(Math.min(.95,dirs/(dirs+queue.length)), out.length);
+      for(const e of res.files){
+        const p=rel?rel+"/"+e.name:e.name;
+        if(e.type==="directory") queue.push(p);
+        else out.push(classify({name:e.name,path:p,size:e.size||0,mtime:e.mtime||Date.now()}));
+      }
+    }
+    return out;
+  },
+  async remove(f){ await window.Capacitor.Plugins.Filesystem.deleteFile({path:ROOT+"/"+f.path}); },
+  /* Native γέφυρα (θα γραφτεί στο βήμα APK):
+     getAppCaches()  → StorageStatsManager.queryStatsForPackage().cacheBytes (άδεια «Πρόσβαση χρήσης»)
+     clearAllAppCache() → StorageManager.ACTION_CLEAR_APP_CACHE (παράθυρο του Android, σβήνει ΜΟΝΟ cache)
+     openAppStorage(pkg) → ρυθμίσεις της εφαρμογής, για «Εκκαθάριση προσωρινής μνήμης» */
+  async appCaches(){ const n=window.SkoupaNative; return n?.getAppCaches ? n.getAppCaches() : []; },
+  async clearAppCache(){ const n=window.SkoupaNative; if(n?.clearAllAppCache) return n.clearAllAppCache(); throw new Error("no-native"); },
+  async clearOneApp(pkg){ const n=window.SkoupaNative; if(n?.openAppStorage) return n.openAppStorage(pkg); throw new Error("no-native"); }
+};
+
+/* 2) Browser: επιλογή φακέλου (μόνο προβολή — ο browser δεν επιτρέπει διαγραφή) */
+const FolderAdapter = {
+  id:"folder", label:"Φάκελος (προβολή)", canDelete:false,
+  scan(){ return new Promise(resolve=>{
+    const inp=$("#folderPick"); inp.value="";
+    inp.onchange=()=>resolve([...inp.files].map(x=>classify({name:x.name,path:x.webkitRelativePath||x.name,size:x.size,mtime:x.lastModified})));
+    inp.click(); }); },
+  async remove(){ throw new Error("readonly"); }
+};
+
+/* 3) Επίδειξη: ρεαλιστικό δείγμα κινητού */
+const DemoAdapter = {
+  id:"demo", label:"Επίδειξη", canDelete:true,
+  async scan(onProgress, roots=[""]){
+    let seed=7; const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+    const now=Date.now(), day=864e5, out=[];
+    const add=(path,size,ageDays)=>{ const name=path.split("/").pop(); out.push(classify({name,path,size:Math.round(size),mtime:now-ageDays*day})); };
+    for(let i=0;i<46;i++) add(`DCIM/Camera/IMG_2026${String(1000+i*7)}.jpg`, (2.5+rnd()*4)*MB, rnd()*700);
+    for(let i=0;i<14;i++) add(`DCIM/Camera/VID_2026${String(2000+i*11)}.mp4`, (40+rnd()*900)*MB, rnd()*600);
+    add("DCIM/Camera/VID_Πρωτάθλημα_ΕΤΑΒΕ_ολόκληρο.mp4", 3.4*1024*MB, 340);
+    add("Movies/Προπόνηση_Σάββατο_4K.mp4", 1.9*1024*MB, 120);
+    add("Movies/CapCut/export_reel_final.mp4", 210*MB, 30);
+    add("Movies/CapCut/export_reel_final (1).mp4", 210*MB, 29);
+    for(let i=0;i<30;i++) add(`Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Images/IMG-2026-WA00${10+i}.jpg`, (0.1+rnd()*0.4)*MB, rnd()*300);
+    for(let i=0;i<12;i++) add(`Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Video/VID-2026-WA00${10+i}.mp4`, (5+rnd()*60)*MB, rnd()*300);
+    for(let i=0;i<10;i++) add(`Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes/PTT-2026-WA00${i}.opus`, (0.05+rnd()*0.6)*MB, rnd()*200);
+    for(let i=0;i<40;i++) add(`Android/media/com.whatsapp/WhatsApp/Media/.Statuses/${(1e9*rnd()|0).toString(16)}.jpg`, (0.1+rnd()*0.3)*MB, rnd()*10);
+    add("Android/media/com.whatsapp/WhatsApp/Databases/msgstore-2026-09-01.1.db.crypt14", 180*MB, 60);
+    add("Android/media/com.whatsapp/WhatsApp/Databases/msgstore-2026-08-01.1.db.crypt14", 176*MB, 90);
+    for(let i=0;i<60;i++) add(`DCIM/.thumbnails/${1700000000+i*977}.jpg`, (0.02+rnd()*0.08)*MB, rnd()*500);
+    add("DCIM/.thumbnails/.thumbdata4--1967290299", 312*MB, 400);
+    for(let i=0;i<8;i++) add(`Download/CapCut_${8+i}.0.apk`, (180+rnd()*40)*MB, 100+i*30);
+    add("Download/Δελτίο_τύπου_Ξάνθη.pdf", 0.4*MB, 220);
+    add("Download/Προκήρυξη_ΕΤΑΒΕ_2026.pdf", 1.2*MB, 260);
+    add("Download/Προκήρυξη_ΕΤΑΒΕ_2026 (1).pdf", 1.2*MB, 259);
+    add("Download/Προκήρυξη_ΕΤΑΒΕ_2026 (2).pdf", 1.2*MB, 258);
+    add("Download/video_αγώνα.mp4.crdownload", 95*MB, 45);
+    add("Download/backup_scoreboard.zip", 22*MB, 15);
+    for(let i=0;i<14;i++) add(`Music/Workout/track_${i+1}.mp3`, (6+rnd()*5)*MB, 500);
+    add("Recordings/Ηχογράφηση_συνέλευσης.m4a", 64*MB, 380);
+    for(let i=0;i<9;i++) add(`Pictures/Screenshots/Screenshot_2026${1100+i}.png`, (0.6+rnd()*1.4)*MB, rnd()*120);
+    for(let i=0;i<6;i++) add(`.cache/com.app${i}/blob_${i}.tmp`, (5+rnd()*40)*MB, rnd()*90);
+    for(let i=0;i<7;i++) add(`Android/media/com.facebook.katana/cache/video_${i}.tmp`, (8+rnd()*30)*MB, rnd()*30);
+    add("tencent/msflogs/log_2025.log", 18*MB, 300);
+    add("Telegram/Telegram Video/4_5832.mp4", 420*MB, 150);
+    add(".Trash-1000/files/old_video.mp4", 260*MB, 200);
+    for(let i=0;i<5;i++) add(`Documents/empty_${i}.txt`, 0, 40);
+    add("Android/media/com.whatsapp/WhatsApp/.Shared/tmp_share_1.jpg", 2*MB, 20);
+    add("Android/media/com.facebook.katana/cache/images/img_cache.bin", 140*MB, 3);
+    add("Android/media/com.instagram.android/cache/reels_cache.bin", 96*MB, 2);
+    add("Android/media/com.lemon.lvoverseas/files/cache/draft_cache.bin", 310*MB, 6);
+    add("Android/media/com.lemon.lvoverseas/files/projects/Reel_Ταεκβοντό.draft", 35*MB, 6);
+    add("Android/media/org.telegram.messenger/Telegram/Telegram Cache/-6012.mp4", 85*MB, 14);
+    add("Viber/media/.thumbnails/th_1.jpg", 4*MB, 50);
+    add("Viber/backup/viber_backup.zip", 48*MB, 30);
+    add("Download/kodikoi.kdbx", 0.1*MB, 400);
+    add("LOST.DIR/1234", 12*MB, 600);
+    const rs=roots.filter(r=>r!=="").map(r=>r.toLowerCase()+"/");
+    const res = rs.length ? out.filter(f=>rs.some(r=>f.path.toLowerCase().startsWith(r))) : out;
+    for(let s=0;s<=10;s++){ await new Promise(r=>setTimeout(r,45)); onProgress(s/10, Math.round(res.length*s/10)); }
+    return res;
+  },
+  async remove(){ await new Promise(r=>setTimeout(r,8)); },
+  async appCaches(){ return [
+    ["TikTok","com.zhiliaoapp.musically",1.8,"#111"],["Facebook","com.facebook.katana",1.2,"#1877f2"],["CapCut","com.lemon.lvoverseas",0.9,"#222"],
+    ["Instagram","com.instagram.android",0.64,"#d62976"],["Chrome","com.android.chrome",0.42,"#1a73e8"],["Messenger","com.facebook.orca",0.38,"#a033ff"],
+    ["YouTube","com.google.android.youtube",0.3,"#e00"],["Google Φωτογραφίες","com.google.android.apps.photos",0.21,"#34a853"],
+    ["WhatsApp","com.whatsapp",0.15,"#25d366"],["Viber","com.viber.voip",0.12,"#7360f2"]
+  ].map(([name,pkg,gb,color])=>({name,pkg,color,cacheBytes:Math.round(gb*1024**3)})); },
+  async clearAppCache(){ demoApps.forEach(a=>a.cacheBytes=0); },
+  async clearOneApp(pkg){ const a=demoApps.find(x=>x.pkg===pkg); if(a) a.cacheBytes=0; }
+};
+let demoApps=[];
+
+/* ===================== Κατάσταση ===================== */
+let adapter = NativeAdapter.available() ? NativeAdapter : DemoAdapter;
+let files=[], selected=new Set(), filter="all", shown=150;
+
+function matchCat(f,c){
+  if(c==="all") return true;
+  if(c==="large") return f.size>=100*MB;
+  if(c==="junk") return f.junk; if(c==="hidden") return f.hidden; if(c==="dup") return f.dup;
+  return f.type===c;
+}
+function totals(){
+  const t={}; for(const c of CATS) t[c.id]={n:0,s:0};
+  for(const f of files) for(const c of CATS) if(matchCat(f,c.id)){ t[c.id].n++; t[c.id].s+=f.size; }
+  return t;
+}
+/* «Έξυπνος καθαρισμός»: μόνο ό,τι είναι ασφαλές να φύγει χωρίς σκέψη */
+function smartSet(){ return files.filter(f=>!f.protected && !f.keep && (f.junk || f.dup || (f.type==="apk" && f.path.toLowerCase().startsWith("download/")))); }
+
+/* ===================== Απόδοση ===================== */
+function renderHero(){
+  const smart=smartSet(), freeB=smart.reduce((a,f)=>a+f.size,0), [n,u]=fmtParts(freeB);
+  $("#bigFree").innerHTML=`${n}<small>${u}</small>`;
+  $("#heroSub").textContent = files.length
+    ? `${smart.length} αρχεία είναι σκουπίδια, cache, διπλότυπα ή παλιά APK και φεύγουν με ασφάλεια. Τα υπόλοιπα τα διαλέγεις εσύ.`
+    : "Πάτα «Νέα σάρωση» για να βρω τι πιάνει χώρο.";
+  const t=totals(), parts=["video","image","audio","junk","apk","doc"], total=files.reduce((a,f)=>a+f.size,0)||1;
+  $("#stack").innerHTML=parts.map(p=>{const c=CATS.find(x=>x.id===p);return `<span style="width:${(t[p].s/total*100).toFixed(2)}%;background:${c.color}" title="${c.name}"></span>`}).join("");
+  $("#legend").innerHTML=parts.map(p=>{const c=CATS.find(x=>x.id===p);return `<span><i style="background:${c.color}"></i>${c.name} <span class="num">${fmt(t[p].s)}</span></span>`}).join("");
+  $("#totalFiles").textContent = files.length? `${files.length.toLocaleString("el-GR")} αρχεία · ${fmt(files.reduce((a,f)=>a+f.size,0))}` : "";
+  $("#mode").textContent=adapter.label; $("#mode").classList.toggle("live",adapter.id==="native");
+}
+function renderCats(){
+  const t=totals();
+  $("#cats").innerHTML=CATS.map(c=>`<button class="cat${filter===c.id?" on":""}" data-cat="${c.id}">
+    <span class="ic" style="background:color-mix(in srgb,${c.color} 18%,transparent)">${svgIcon(c.id)}</span>
+    <span class="name">${c.name}</span>
+    <span class="meta"><span>${t[c.id].n} αρχεία</span><span class="num">${fmt(t[c.id].s)}</span></span></button>`).join("");
+  const chips=[{id:"all",name:"Όλα"},...CATS];
+  $("#chips").innerHTML=chips.map(c=>`<button class="chip${filter===c.id?" on":""}" data-cat="${c.id}">${c.name}</button>`).join("");
+}
+function visible(){
+  const q=$("#q").value.trim().toLowerCase(), min=+$("#minSize").value*MB, s=$("#sort").value;
+  let v=files.filter(f=>matchCat(f,filter) && f.size>=min && (!q || f.path.toLowerCase().includes(q)));
+  const cmp={size:(a,b)=>b.size-a.size, old:(a,b)=>a.mtime-b.mtime, new:(a,b)=>b.mtime-a.mtime, name:(a,b)=>a.name.localeCompare(b.name,"el")}[s];
+  return v.sort(cmp);
+}
+function renderList(){
+  const v=visible(), cat=CATS.find(c=>c.id===filter);
+  $("#listTitle").textContent = cat? cat.name : "Όλα τα αρχεία";
+  $("#listCount").textContent = `${v.length} · ${fmt(v.reduce((a,f)=>a+f.size,0))}`;
+  if(!v.length){ $("#list").innerHTML=`<div class="empty">${files.length?"Δεν βρέθηκαν αρχεία με αυτά τα φίλτρα.":"Δεν έχει γίνει σάρωση ακόμα."}</div>`; renderBar(v); return; }
+  const rows=v.slice(0,shown).map(f=>{
+    const tags=[f.junk&&'<span class="tag warn">σκουπίδι</span>', f.dup&&'<span class="tag warn">διπλότυπο</span>', f.hidden&&'<span class="tag">κρυφό</span>', f.size>=100*MB&&'<span class="tag">μεγάλο</span>', f.protected&&'<span class="tag">προστατευμένο</span>', f.keep&&'<span class="tag" style="color:var(--accent)">φύλαξέ το</span>', f.app&&`<span class="tag">${esc(f.app)}</span>`].filter(Boolean).join("");
+    const ic=f.junk?"junk":TYPE_ICON[f.type]||"doc", dir=f.path.split("/").slice(0,-1).join("/")||"/";
+    return `<div class="item${selected.has(f)?" sel":""}" data-i="${files.indexOf(f)}" role="checkbox" aria-checked="${selected.has(f)}" tabindex="0">
+      <span class="cb"><svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" stroke="var(--accent-ink)" stroke-width="2.4" fill="none"/></svg></span>
+      <span class="ficon">${svgIcon(ic)}</span>
+      <span style="min-width:0"><div class="fname">${esc(f.name)}</div><div class="fpath">${esc(f.why?f.why+" · "+dir:dir)}</div>${tags?`<div class="tags">${tags}</div>`:""}</span>
+      <span class="fsize num">${fmt(f.size)}<small>${date(f.mtime)}</small></span></div>`; }).join("");
+  $("#list").innerHTML = `<div class="listhead">Πάτα ένα αρχείο για επιλογή</div>` + rows +
+    (v.length>shown?`<div class="more"><button class="btn" id="moreBtn">Δείξε άλλα ${Math.min(150,v.length-shown)} (από ${v.length})</button></div>`:"");
+  renderBar(v);
+}
+function renderBar(v=visible()){
+  const sel=[...selected], size=sel.reduce((a,f)=>a+f.size,0);
+  $("#selSize").textContent = fmt(size);
+  $("#selCount").textContent = sel.length? `${sel.length} επιλεγμένα αρχεία` : "Δεν έχεις επιλέξει αρχεία";
+  $("#delBtn").disabled = !sel.length;
+  const allOn = v.length && v.slice(0,shown).filter(f=>!f.protected&&!f.keep).every(f=>selected.has(f));
+  $("#selAll").classList.toggle("on",!!allOn);
+}
+function renderZones(){
+  $("#zones").innerHTML=ZONES.map(z=>`<button class="cat${zone===z.id?" on":""}" data-zone="${z.id}">
+    <span class="name">${z.name}</span>
+    <span class="meta"><span>${zone===z.id?"σαρώθηκε τώρα":(zoneSize[z.id]!=null?"τελευταία σάρωση":"πάτα για σάρωση")}</span><span class="num">${zoneSize[z.id]!=null?fmt(zoneSize[z.id]):""}</span></span></button>`).join("");
+  const z=ZONES.find(x=>x.id===zone); $("#scopeNow").textContent = z? "Τώρα: "+z.name : "";
+}
+async function renderApps(){
+  const apps = adapter.id==="demo" ? demoApps : await (adapter.appCaches?.()||[]);
+  const total=apps.reduce((a,x)=>a+x.cacheBytes,0), max=Math.max(1,...apps.map(a=>a.cacheBytes));
+  $("#cacheTotal").textContent = apps.length? fmt(total) : "";
+  if(!apps.length){ $("#apps").innerHTML=`<div class="empty">${adapter.id==="native"?"Δώσε την άδεια «Πρόσβαση χρήσης» για να δω πόση cache έχει κάθε εφαρμογή.":"Η λίστα εφαρμογών εμφανίζεται στην έκδοση APK."}</div>`; return; }
+  $("#apps").innerHTML=[...apps].sort((a,b)=>b.cacheBytes-a.cacheBytes).map(a=>`<div class="app">
+    <span class="av" style="background:${a.color||"var(--muted)"}">${esc(a.name[0])}</span>
+    <span style="min-width:0"><div class="fname">${esc(a.name)}</div><div class="meter"><b style="width:${(a.cacheBytes/max*100).toFixed(1)}%"></b></div><div class="sz num">${a.cacheBytes?fmt(a.cacheBytes)+" cache":"Καθαρή"}</div></span>
+    <button class="btn sm" data-app="${esc(a.pkg)}" ${a.cacheBytes?"":"disabled"}>Καθάρισμα</button></div>`).join("") + (adapter.id==="demo"?`<div class="listhead" style="border-top:1px solid var(--line);border-bottom:0">Δείγμα: τα μεγέθη είναι παράδειγμα και το κουμπί δεν σβήνει τίποτα στο κινητό σου.</div>`:"");
+}
+function renderAll(){ renderHero(); renderZones(); renderCats(); renderList(); renderApps(); }
+function renderNote(){
+  const n=$("#envNote");
+  if(adapter.id==="native") n.innerHTML=`<b>Ασφάλεια:</b> οι φάκελοι συστήματος και τα δεδομένα εφαρμογών (Android/data, Android/obb) δεν σαρώνονται και δεν διαγράφονται ποτέ.`;
+  else n.innerHTML=`<b>Είσαι στη λειτουργία επίδειξης.</b> Τα αρχεία είναι δείγμα για να δοκιμάσεις την εφαρμογή. Ο browser δεν επιτρέπει διαγραφή αρχείων του κινητού. Αυτό θα γίνεται στην έκδοση APK, με την άδεια «Πρόσβαση σε όλα τα αρχεία». <button class="btn" id="pickFolder" style="margin-top:10px;width:100%">Σάρωση ενός φακέλου (μόνο προβολή)</button>`;
+}
+
+/* ===================== Ενέργειες ===================== */
+async function runScan(ad=adapter, zid=zone){
+  adapter=ad; zone=zid; selected.clear(); shown=150; const Z=ZONES.find(x=>x.id===zid)||ZONES[0];
+  const p=$("#prog"); p.hidden=false; const bar=p.querySelector("b"); bar.style.width="3%";
+  $("#scanBtn").disabled=true; $("#heroSub").textContent="Σάρωση…";
+  try{
+    if(ad.ensurePermission) await ad.ensurePermission();
+    files = await ad.scan((x,n)=>{ bar.style.width=(x*100)+"%"; $("#heroSub").textContent=`Σάρωση: ${Z.name}… ${n} αρχεία`; }, Z.roots);
+    if(Z.only) files=files.filter(Z.only);
+    markDuplicates(files); zoneSize[Z.id]=files.reduce((a,f)=>a+f.size,0);
+    if(ad.id==="demo" && !demoApps.length) demoApps=await ad.appCaches();
+  }catch(e){ toast("Η σάρωση σταμάτησε. Έλεγξε ότι έχεις δώσει άδεια πρόσβασης στα αρχεία."); }
+  bar.style.width="100%"; setTimeout(()=>p.hidden=true,400); $("#scanBtn").disabled=false;
+  renderNote(); renderAll();
+}
+function toggle(f){ if(f.protected){ toast("Αυτό το αρχείο είναι προστατευμένο."); return; } selected.has(f)?selected.delete(f):selected.add(f); }
+
+function askDelete(list){
+  if(!adapter.canDelete){ toast("Σε αυτή τη λειτουργία τα αρχεία μόνο προβάλλονται. Η διαγραφή γίνεται από την εφαρμογή APK."); return; }
+  pending=list.filter(f=>!f.protected); if(!pending.length) return;
+  const size=pending.reduce((a,f)=>a+f.size,0);
+  $("#sheetText").textContent=`Θα διαγραφούν οριστικά ${pending.length} αρχεία και θα ελευθερωθούν ${fmt(size)}. Δεν επιστρέφουν από τον κάδο.`;
+  const cam=pending.filter(f=>/^dcim\/camera\//i.test(f.path)&&!f.junk).length, docs=pending.filter(f=>f.type==="doc"&&!f.junk&&!f.dup).length;
+  const w=[cam&&`${cam} από αυτά είναι φωτογραφίες ή βίντεο της κάμερας.`, docs&&`${docs} είναι έγγραφα.`, pending.some(f=>f.keep)&&`Προσοχή: ${pending.filter(f=>f.keep).length} είναι αντίγραφα συνομιλιών ή αρχεία κωδικών.`].filter(Boolean);
+  $("#sheetWarn").hidden=!w.length; $("#sheetWarn").textContent=w.join(" ")+(w.length?" Βεβαιώσου ότι έχεις αντίγραφο.":"");
+  $("#sheetBg").hidden=false; $("#cancelDel").focus();
+}
+let pending=[];
+async function doDelete(){
+  $("#sheetBg").hidden=true;
+  let ok=0, freed=0, fail=0;
+  for(const f of pending){ try{ await adapter.remove(f); ok++; freed+=f.size; selected.delete(f); f._gone=true; }catch(e){ fail++; } }
+  files=files.filter(f=>!f._gone); markDuplicates(files);
+  toast((adapter.id==="demo"?"Επίδειξη: ":"")+`Διαγράφηκαν ${ok} αρχεία · ελευθερώθηκαν ${fmt(freed)}`+(fail?` · ${fail} δεν διαγράφηκαν`:""));
+  pending=[]; renderAll();
+}
+
+/* ===================== Συμβάντα ===================== */
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-cat]"); if(c){ filter=filter===c.dataset.cat&&c.classList.contains("cat")?"all":c.dataset.cat; shown=150; renderCats(); renderList();
+    if(c.classList.contains("cat")) $("#allFiles").scrollIntoView({behavior:"smooth",block:"start"}); return; }
+  const it=e.target.closest(".item"); if(it){ toggle(files[+it.dataset.i]); renderList(); return; }
+  if(e.target.id==="moreBtn"){ shown+=150; renderList(); }
+  const zb=e.target.closest("[data-zone]"); if(zb){ filter="all"; runScan(NativeAdapter.available()?NativeAdapter:DemoAdapter, zb.dataset.zone); return; }
+  const ab=e.target.closest("[data-app]"); if(ab){ clearOne(ab.dataset.app); return; }
+  if(e.target.id==="pickFolder") runScan(FolderAdapter);
+});
+document.addEventListener("keydown",e=>{ const it=e.target.closest?.(".item"); if(it&&(e.key===" "||e.key==="Enter")){ e.preventDefault(); toggle(files[+it.dataset.i]); renderList(); document.querySelector(`.item[data-i="${it.dataset.i}"]`)?.focus(); }
+  if(e.key==="Escape") $("#sheetBg").hidden=true; });
+["q","sort","minSize"].forEach(id=>$("#"+id).addEventListener("input",()=>{shown=150;renderList();}));
+$("#selAll").onclick=()=>{ const v=visible().slice(0,shown).filter(f=>!f.protected&&!f.keep), all=v.every(f=>selected.has(f)); v.forEach(f=>all?selected.delete(f):selected.add(f)); renderList(); };
+$("#delBtn").onclick=()=>askDelete([...selected]);
+$("#smartBtn").onclick=()=>{ const s=smartSet(); if(!s.length){ toast("Δεν βρέθηκαν σκουπίδια. Το κινητό είναι καθαρό!"); return; } askDelete(s); };
+$("#scanBtn").onclick=()=>runScan(NativeAdapter.available()?NativeAdapter:DemoAdapter, "all");
+async function clearOne(pkg){
+  try{ await adapter.clearOneApp(pkg);
+    toast(adapter.id==="native"?"Πάτα «Εκκαθάριση προσωρινής μνήμης». Όχι το «Διαγραφή δεδομένων».":"Επίδειξη: έτσι θα φαίνεται. Στο κινητό σου δεν σβήστηκε τίποτα.");
+    renderApps(); }catch(e){ toast("Αυτό λειτουργεί στην έκδοση APK."); }
+}
+$("#cancelDel").onclick=()=>$("#sheetBg").hidden=true;
+$("#sheetBg").onclick=e=>{ if(e.target.id==="sheetBg") $("#sheetBg").hidden=true; };
+$("#confirmDel").onclick=doDelete;
+$("#cacheBtn").onclick=async()=>{
+  try{ if(!adapter.clearAppCache) throw 0; await adapter.clearAppCache(); toast("Καθαρίστηκε η cache όλων των εφαρμογών. Κωδικοί και συνδέσεις έμειναν."); renderApps(); }
+  catch(e){ toast("Αυτό θα ανοίγει το παράθυρο του Android για καθάρισμα cache, στην έκδοση APK."); }
+};
+
+renderNote(); runScan(adapter);
+</script>
+
+</body>
+</html>
