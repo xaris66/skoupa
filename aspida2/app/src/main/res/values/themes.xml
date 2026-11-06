@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Aspida" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorAccent">#3DDC97</item>
+        <item name="android:colorPrimary">#0B1016</item>
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">#0B1016</item>
+        <item name="android:navigationBarColor">#0B1016</item>
+    </style>
+    <style name="Aspida.Dialog" parent="android:Theme.Material.Dialog.NoActionBar">
+        <item name="android:colorAccent">#3DDC97</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+</resources>

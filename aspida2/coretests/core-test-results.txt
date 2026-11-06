@@ -1,0 +1,51 @@
+PASS | T01 Άνοιγμα google.com → χωρίς ψευδή συναγερμό | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://google.com/ reg=google.com chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T02 Άνοιγμα https://www.youtube.com/watch?v=abc → χωρίς ψευδή συναγερμό | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://www.youtube.com/watch?v=abc reg=youtube.com chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T03 Άνοιγμα https://el.wikipedia.org/wiki/Ταεκβοντό → χωρίς ψευδή συναγερμό | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://el.wikipedia.org/wiki/Ταεκβοντό reg=wikipedia.org chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T04 Άνοιγμα https://www.facebook.com/ → χωρίς ψευδή συναγερμό | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://www.facebook.com/ reg=facebook.com chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T05 Άνοιγμα https://www.instagram.com/ → χωρίς ψευδή συναγερμό | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://www.instagram.com/ reg=instagram.com chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T06 go.telekom.gr/openBills (χωρίς προσωπικά στοιχεία) | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://go.telekom.gr/openBills reg=telekom.gr chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T07 cosmote.go.link/openBills χωρίς προκαταβολική εμπιστοσύνη | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://www.cosmote.gr/selfcare/bills reg=cosmote.gr chain=2 findings=[link-service:0 | dest-change:0] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T07b go.link: κακόβουλος τελικός προορισμός ΔΕΝ μπλοκάρει όλο το go.link | bad=DANGEROUS · cosmote.go.link δεν επηρεάζεται
+PASS | T08 e-bill.telekom.gr | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://e-bill.telekom.gr/ reg=telekom.gr chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T09 Νόμιμο URL με παραμέτρους | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://www.skroutz.gr/search?keyphrase=taekwondo+dobok&order_by=price&utm_source=fb reg=skroutz.gr chain=1 findings=[] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T10 Νόμιμο URL με ανακατεύθυνση (bit.ly → wikipedia) | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://el.wikipedia.org/wiki/Καβάλα reg=wikipedia.org chain=2 findings=[link-service:0 | dest-change:0] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T11 Δοκιμαστική σελίδα phishing (testsafebrowsing) — λογική επιβεβαίωσης | verdict=DANGEROUS conf=HIGH final=https://testsafebrowsing.appspot.com/s/phishing.html reg=testsafebrowsing.appspot.com chain=1 findings=[gsb:100] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T12 Δοκιμαστική κακόβουλη σελίδα (malware) — λογική επιβεβαίωσης | verdict=DANGEROUS conf=HIGH final=https://testsafebrowsing.appspot.com/s/malware.html reg=testsafebrowsing.appspot.com chain=1 findings=[gsb:100] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T13 Πλαστή σελίδα σύνδεσης Facebook | verdict=SUSPICIOUS conf=LOW final=https://facebook-login.secure-verify.xyz/login.php reg=secure-verify.xyz chain=1 findings=[brand-mismatch-Facebook:70] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T14 Πλαστή Instagram (instagrarn.com) | verdict=SUSPICIOUS conf=MEDIUM final=https://instagrarn.com/accounts/login reg=instagrarn.com chain=1 findings=[lookalike-Instagram:85] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T15 Πλαστή τραπεζική διεύθυνση | verdict=SUSPICIOUS conf=LOW final=https://piraeusbank-gr.account-verify.top/winbank reg=account-verify.top chain=1 findings=[brand-mismatch-Τράπεζα Πειραιώς:70] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T16 Ομοιόμορφοι χαρακτήρες (Κυριλλικά «раураl.com», μικτό «fаcebook.com») | a=xn--l-7sba6dbr.com SUSPICIOUS · b=xn--fcebook-2fg.com SUSPICIOUS [mixed-script, lookalike-Facebook]
+PASS | T17 Παραπλανητικό subdomain (www.paypal.com.secure-login.info) | verdict=SUSPICIOUS conf=LOW final=https://www.paypal.com.secure-login.info/webscr reg=secure-login.info chain=1 findings=[brand-mismatch-PayPal:70] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T17b Κόλπο «@» (https://facebook.com@evil.example/) | verdict=SUSPICIOUS conf=LOW final=https://evil.example/ reg=evil.example chain=1 findings=[userinfo:70] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T18 Συντόμευση → δοκιμαστική απειλή | verdict=DANGEROUS conf=HIGH final=https://testsafebrowsing.appspot.com/s/phishing.html reg=testsafebrowsing.appspot.com chain=2 findings=[link-service:0 | dest-change:0 | gsb:100] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T19 Αλλαγή τελικού προορισμού μετά από ανακατεύθυνση | verdict=NO_KNOWN_THREAT conf=MEDIUM final=https://other-site.example.net/b reg=example.net chain=2 findings=[dest-change:0] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T20 Άγνωστος σύνδεσμος, υπηρεσίες εκτός → «Δεν ολοκληρώθηκε» | verdict=UNCHECKED conf=LOW final=https://unknown-small-shop.gr/ reg=unknown-small-shop.gr chain=1 findings=[] ok=[] failed=1
+PASS | T26 Σύνδεσμος μέσα σε κείμενο email | verdict=SUSPICIOUS conf=LOW final=https://www.paypal.com.secure-login.info/pay reg=secure-login.info chain=1 findings=[brand-mismatch-PayPal:70] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T27 Phishing που μιμείται Facebook (faceb00k.com) | verdict=SUSPICIOUS conf=MEDIUM final=http://faceb00k.com/recover reg=faceb00k.com chain=1 findings=[http:15 | lookalike-Facebook:85] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T28 Phishing που μιμείται Instagram σε κοινόχρηστη φιλοξενία | verdict=SUSPICIOUS conf=LOW final=https://instagram-verify.github.io/login reg=instagram-verify.github.io chain=1 findings=[brand-mismatch-Instagram:70] ok=[Google Safe Browsing, URLhaus] failed=0
+PASS | T28b Επίσημοι σύντομοι σύνδεσμοι Meta (fb.me, wa.me, m.me, ig.me) | fb.me=NO_KNOWN_THREAT, wa.me=NO_KNOWN_THREAT, m.me=NO_KNOWN_THREAT, ig.me=NO_KNOWN_THREAT
+PASS | T44 Διακοπή Internet κατά τον έλεγχο | verdict=UNCHECKED conf=LOW final=https://www.google.com/ reg=google.com chain=1 findings=[redirect-fail:0] ok=[] failed=2
+PASS | T45 Google Safe Browsing μη διαθέσιμο (503) → ΟΧΙ «ασφαλές» | verdict=UNCHECKED conf=LOW final=https://www.google.com/ reg=google.com chain=1 findings=[] ok=[] failed=1
+PASS | T45b Χωρίς API key → «Δεν ολοκληρώθηκε» | verdict=UNCHECKED conf=LOW final=https://www.google.com/ reg=google.com chain=1 findings=[] ok=[] failed=1
+PASS | T45c Cache Safe Browsing τηρεί cacheDuration | κλήσεις: 1η+2η=1 (από cache), μετά από 25 ώρες=2
+PASS | T46 Αποκλεισμός επιβεβαιωμένου URL (μόνο το συγκεκριμένο URL) | αποκλεισμένο: ναι · άλλο URL ίδιου host: όχι
+PASS | T47 Προσωρινή καραντίνα και σωστή λήξη | ενεργό→λήξη→επανέλεγχος→αφαίρεση
+PASS | T48 Αφαίρεση λανθασμένου αποκλεισμού (λογική) | αφαιρέθηκε (ο έλεγχος δακτυλικού γίνεται στη συσκευή)
+PASS | T-PSL Public Suffix List: σωστά καταχωρίσιμα domains | 7/7 σωστά
+PASS | T-GOV Ελληνικές υπηρεσίες χωρίς ψευδή συναγερμό + μίμηση gov.gr | www.gov.gr=NO_KNOWN_THREAT, www1.aade.gr=NO_KNOWN_THREAT, www.elta.gr=NO_KNOWN_THREAT, www.piraeusbank.gr=NO_KNOWN_THREAT · ψεύτικο=SUSPICIOUS
+PASS | T-IDN Ελληνικό IDN domain (παράδειγμα.ελ) χωρίς ψευδή συναγερμό | host=παράδειγμα.ελ ascii=https://xn--hxajbheg2az3al.xn--qxam/
+PASS | T-SCHEME javascript: σύνδεσμος | verdict=SUSPICIOUS conf=MEDIUM final=null reg=null chain=0 findings=[scheme:90] ok=[] failed=0
+PASS | T-PRIV Ανακατεύθυνση σε ιδιωτικό δίκτυο δεν ακολουθείται | verdict=SUSPICIOUS conf=LOW final=http://192.168.1.1/admin reg=null chain=2 findings=[private:55 | http:15 | ip:35 | dest-change:0] ok=[Google Safe Browsing] failed=0
+PASS | T31 Ασφαλής φωτογραφία | type=jpeg verdict=NO_KNOWN_THREAT conf=LOW sha=727a8e252ec2… findings=[]
+PASS | T32 Ασφαλές PDF | type=pdf verdict=NO_KNOWN_THREAT conf=LOW sha=eb2ab5802191… findings=[]
+PASS | T32b PDF με αυτόματη JavaScript + /Launch | type=pdf verdict=SUSPICIOUS conf=MEDIUM sha=99ff5209a045… findings=[pdf-launch:80 | pdf-autojs:65]
+PASS | T33 Ασφαλές ZIP | type=zip verdict=NO_KNOWN_THREAT conf=LOW sha=753bad217926… findings=[]
+PASS | T34 Αρχείο δοκιμής EICAR | type=text verdict=DANGEROUS conf=HIGH sha=275a021bbfb6… findings=[hash:100]
+PASS | T34b EICAR μέσα σε ZIP | type=zip verdict=DANGEROUS conf=HIGH sha=49876129d3aa… findings=[zip-exec:55 | zip-eicar:100]
+PASS | T35 Παραπλανητική επέκταση (photo.jpg.apk, invoice.pdf που είναι .exe, RTLO) | a=[double-ext, apk] b=[ext-mismatch, native-exec] c=«smsgpj.apk» [rtlo, apk]
+PASS | T36 Τεράστιο συμπιεσμένο (βόμβα) χωρίς εξάντληση πόρων | αρχείο 696 KB → δήλωση 700 MB · σταμάτησε στα 512 MB · 417 ms · μνήμη Δ≈0 MB · zip-bomb
+PASS | T37 APK δοκιμής: αναγνώριση από περιεχόμενο | type=apk verdict=NO_KNOWN_THREAT conf=LOW sha=03340c5b0785… findings=[apk:20]
+PASS | T37b APK μεταμφιεσμένο σε .zip | type=apk verdict=NO_KNOWN_THREAT conf=LOW sha=03340c5b0785… findings=[apk:20]
+PASS | T-ZIPSLIP ZIP με διαδρομή ../ | type=zip verdict=SUSPICIOUS conf=MEDIUM sha=4e6cfaea6fb8… findings=[zip-slip:80 | zip-exec:55]
+PASS | T-JSON Αναλυτής JSON | ok
+ΣΥΝΟΛΟ: 50/50 PASS
