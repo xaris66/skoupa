@@ -61,7 +61,7 @@ jobs:
           java -Dfile.encoding=UTF-8 -Dpsl=aspida2/app/src/main/assets/public_suffix_list.dat -Dout=core-test-results.txt -cp core.jar CoreTestsKt
           cat core-test-results.txt >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: android-actions/setup-android@v3
+      
 
       - uses: gradle/actions/setup-gradle@v4
         with:
