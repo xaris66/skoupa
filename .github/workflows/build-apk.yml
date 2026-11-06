@@ -1,1 +1,109 @@
+name: Φτιάξε APK
 
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'icon.svg'
+      - 'manifest.webmanifest'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_ID: gr.tkdkavala.skoupa
+      APP_NAME: Σκούπα
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Ετοιμασία αρχείων εφαρμογής
+        run: |
+          mkdir -p build/www build/assets
+          cp index.html icon.svg manifest.webmanifest build/www/
+
+      - name: Δημιουργία Android project (Capacitor)
+        working-directory: build
+        run: |
+          npm init -y > /dev/null
+          npm i @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          npm i -D @capacitor/assets sharp
+          npx cap init "$APP_NAME" "$APP_ID" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Εικονίδιο εφαρμογής
+        working-directory: build
+        run: |
+          node -e "require('sharp')('www/icon.svg',{density:600}).resize(1024,1024).png().toFile('assets/icon-only.png')"
+          npx capacitor-assets generate --android --iconBackgroundColor '#3ddc97'
+
+      - name: Αριθμός έκδοσης
+        working-directory: build/android
+        run: |
+          sed -i "s/versionCode 1/versionCode $VERSION_CODE/" app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"$VERSION_NAME\"/" app/build.gradle
+          grep -n "versionCode\|versionName" app/build.gradle
+
+      - name: Χτίσιμο APK
+        working-directory: build/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Υπογραφή APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > release.jks
+          else
+            echo "::warning::Δεν βρέθηκε μόνιμο κλειδί (secret ANDROID_KEYSTORE_BASE64). Χρησιμοποιείται προσωρινό — η ενημέρωση πάνω από παλιά έκδοση δεν θα δουλεύει."
+            KEYSTORE_PASS=temp123456
+            keytool -genkeypair -keystore release.jks -alias skoupa -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" -dname "CN=Skoupa"
+          fi
+          IN=build/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          "$BT/zipalign" -f -p 4 "$IN" aligned.apk
+          "$BT/apksigner" sign --ks release.jks --ks-pass "pass:$KEYSTORE_PASS" --out Skoupa.apk aligned.apk
+          "$BT/apksigner" verify Skoupa.apk
+          rm -f release.jks
+
+      - name: Ανέβασμα στα Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION_NAME }}
+          name: Σκούπα ${{ env.VERSION_NAME }}
+          body: Νέα έκδοση. Κατέβασε το Skoupa.apk και άνοιξέ το στο κινητό.
+          files: Skoupa.apk
+          make_latest: true
+
+      - name: Αντίγραφο και στα Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Skoupa-${{ env.VERSION_NAME }}
+          path: Skoupa.apk
